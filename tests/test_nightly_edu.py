@@ -15,7 +15,7 @@ class test_nightly_edu(unittest.TestCase):
     def setUp(self):
 
         # access glue service
-        glue = boto3.client(
+        self.glue = boto3.client(
             service_name='glue',
             region_name='us-east-1',
             endpoint_url='https://glue.us-east-1.amazonaws.com'
@@ -25,6 +25,12 @@ class test_nightly_edu(unittest.TestCase):
         cloudwatch = boto3.client('cloudwatch')
 
     def test_EDUDirect_to_parquet_last_N_months(self):
-        job = glue.start_job_run( JobName=myJob['PlatformEvents_prices'] )
+        job = self.glue.start_job_run( 
+            JobName='PlatformEvents_prices',
+            Arguments={
+                '--ENVIRONMENT': 'dev'
+                }
+        )
+        status = self.glue.get_job_run( JobName='PlatformEvents_prices' )
 
     unittest.main()
