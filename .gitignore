@@ -80,3 +80,6 @@ venv.bak/
 
 # editor config #
 .vscode/*
+
+# test json results #
+tests/results/*

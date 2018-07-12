@@ -5,11 +5,12 @@
 from __future__ import print_function
 
 import unittest
+import time
 import logging
 import boto3
 import json
 
-from utilities import  get_job_object, get_job_state
+from utilities import  get_json_file, get_job_object, get_job_state
 
 import os
 import sys
@@ -32,28 +33,51 @@ class test_nightly_edu(unittest.TestCase):
         # access s3 storage
         self.s3 = boto3.resource('s3')
 
-    def test_EDUDirect_to_parquet_replace(self):
-        job_name = 'EDUDirect_to_parquet_replace'
-        job = get_job_object(self.glue, job_name)
-        status = get_job_state(self.glue, job_name, job)
-        job_run_state = status['JobRunState']
-        print(status, job_run_state)
+        # get json file for this test suite 
+        self.json_results = []
 
-    # https://github.com/aws-samples/aws-etl-orchestrator/blob/master/lambda/gluerunner/gluerunner.py
-    def test_EDUDirect_to_parquet_last_N_months(self):
-        # argument options
-        args = {
-            '--ENVIRONMENT': 'dev'
+        # define the jobs list, including initial params
+        self.job_list = {
+            'EDUDirect_to_parquet_last_N_months': {
+                'args': {
+                    '--MONTHS': '3',
+                    '--ALL_TABLES': 'False'
+                }
+            },
+            'EDUDirect_to_parquet_replace': {
+                'args': {}
+            },
+            'EDUDirect_to_parquet_new_snapshot': {
+                'args': {}
+            },
+            'EDUDirect_to_parquet_current_dimensions': {
+                'args': {}
+            },
         }
 
-        job_name = 'EDUDirect_to_parquet_last_N_months'
-        job = get_job_object(self.glue, job_name , args)
-        status = get_job_state(self.glue, job_name, job)
-        job_run_state = status['JobRunState']
-        print(status, job_run_state)
 
-        if job_run_state in ['SUCCEEDED']:
-            print('success')
+    def test_job_list(self):
+        pending_jobs = self.job_list
+        while(len(pending_jobs)> 0):
+
+            for job_name, job in pending_jobs.items():
+                job_object = get_job_object(self.glue, job_name , job['args'])
+                if job_object and job_object['JobRunId']:
+                    status = get_job_state(self.glue, job_name, job_object)
+                    job_status = status['JobRun']['JobRunState']
+                    if job_status not in ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']:
+                        pending_jobs.pop(job_name, None)
+
+                        #add info to the json
+                        self.json_results[job_name] = {
+                            'status': status['JobRunState'],
+                            'execution_time': status['ExecutionTime']
+                        }
+
+            # wait 10 seconds before try to run jobs again
+            time.sleep(10)
+
+        print(self.json_results)
 
 
 if __name__ == '__main__':
