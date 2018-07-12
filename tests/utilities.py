@@ -45,8 +45,7 @@ def get_job_object(glue_service, job_name, args={}):
 
 
 # https://github.com/aws-samples/aws-etl-orchestrator/blob/master/lambda/gluerunner/gluerunner.py
-def get_job_state(glue_service, job_name, job):
-    job_run_id = job['JobRunId']
+def get_job_state(glue_service, job_name, job_run_id):
     status = glue_service.get_job_run(
         JobName=job_name,
         RunId=job_run_id

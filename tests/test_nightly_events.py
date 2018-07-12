@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.append('..')  
 
-class test_daily_edu(unittest.TestCase):
+class test_nightly_events(unittest.TestCase):
 
     def setUp(self):
 
@@ -38,28 +38,25 @@ class test_daily_edu(unittest.TestCase):
 
         # define the jobs list, including initial params
         self.job_list = {
-            'EDUDirect_to_parquet_current_day': {
-                'args': {}
-            },
-            'EDUDirect_user_agent': {
+            'PlatformEvents_cap_info_to_parquet': {
                 'args': {
                     '--TYPE': 'current_day'
                 }
             },
-            'EDUDirect_to_staging': {
+            'PlatformEvents_to_parquet': {
+                'args': {}
+            },
+            'PlatformEvents_to_staging': {
                 'args': {
                     '--TYPE': 'current_day',
-                    '--ENVIRONMENT': 'dev',
-                    '--START_DATE': '000',
-                    '--END_DATE': '000',
+                    '--ENVIRONMENT': 'dev'
                 }
             },
-            'EDUDirect_related_subject': {
+            'PlatformEvents_prices': {
                 'args': {
                     '--TYPE': 'current_day',
-                    '--ENVIRONMENT': 'dev',
-                    '--START_DATE': '000',
-                    '--END_DATE': '000',
+                    '--ENVIRONMENT': 'dev'
                 }
             },
         }
+        

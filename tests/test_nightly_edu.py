@@ -34,74 +34,93 @@ class test_nightly_edu(unittest.TestCase):
         self.s3 = boto3.resource('s3')
 
         # get json file for this test suite 
-        self.json_results = []
+        self.json_results = {}
 
         # define the jobs list, including initial params
         self.job_list = {
             'EDUDirect_to_parquet_last_N_months': {
-                'args': {
-                    '--MONTHS': '3',
-                    '--ALL_TABLES': 'False'
-                }
+                 'args': {
+                     '--MONTHS': '3',
+                     '--ALL_TABLES': 'False'
+                 }
             },
             'EDUDirect_to_parquet_replace': {
                 'args': {}
             },
-            'EDUDirect_to_parquet_new_snapshot': {
-                'args': {}
+             'EDUDirect_to_parquet_new_snapshot': {
+                 'args': {}
             },
             'EDUDirect_to_parquet_current_dimensions': {
-                'args': {}
+                 'args': {}
             },
             'EDUDirect_user_agent': {
-                'args': {
-                    '--TYPE': 'historical',
-                }
+                 'args': {
+                     '--TYPE': 'historical',
+                 }
             },
             'EDUDirect_nightly_dummy_user_agent': {
-                'args': {}
+                 'args': {}
             },
             'EDUDirect_to_staging': {
-                'args': {
-                    '--TYPE': 'historical',
-                    '--ENVIRONMENT': 'dev',
-                    '--START_DATE': '000',
-                    '--END_DATE': '000',
-                }
+                 'args': {
+                     '--TYPE': 'historical',
+                     '--ENVIRONMENT': 'dev',
+                     '--START_DATE': '000',
+                     '--END_DATE': '000',
+                 }
             },
             'EDUDirect_related_subject': {
-                'args': {
-                    '--TYPE': 'historical',
-                    '--ENVIRONMENT': 'dev',
-                    '--START_DATE': '000',
-                    '--END_DATE': '000',
-                }
+                 'args': {
+                     '--TYPE': 'historical',
+                     '--ENVIRONMENT': 'dev',
+                     '--START_DATE': '000',
+                     '--END_DATE': '000',
+                 }
             },
         }
 
 
     def test_job_list(self):
-        pending_jobs = self.job_list
+        pending_jobs = self.job_list.copy()
+        pending_jobs_to_start = self.job_list.copy()
+
+        while(len(pending_jobs_to_start)> 0):
+            for job_name, job in pending_jobs_to_start.items():
+                # have we already started this job?
+                job_run_id = None
+                if 'job_run_id' in job:
+                    job_run_id = job['JobRunId']
+                    pending_jobs[job_name]['JobRunId'] = job_run_id
+                    del pending_jobs_to_start[job_name]
+                else:
+                    job_object = get_job_object(self.glue, job_name , job['args'])
+                    if job_object and 'JobRunId' in job_object:    
+                        job_run_id = job_object['JobRunId']
+                        pending_jobs[job_name]['JobRunId'] = job_run_id
+                        del pending_jobs_to_start[job_name]
+
+        
         while(len(pending_jobs)> 0):
 
             for job_name, job in pending_jobs.items():
-                job_object = get_job_object(self.glue, job_name , job['args'])
-                if job_object and job_object['JobRunId']:
-                    status = get_job_state(self.glue, job_name, job_object)
-                    job_status = status['JobRun']['JobRunState']
-                    if job_status not in ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']:
-                        pending_jobs.pop(job_name, None)
+                job_run_id = job['JobRunId']
+                status = get_job_state(self.glue, job_name, job_run_id)
+                job_status = status['JobRun']['JobRunState']
+                if job_status not in ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']:
+                    # remove job from pending list
+                    del pending_jobs[job_name]
 
-                        #add info to the json
-                        self.json_results[job_name] = {
-                            'status': status['JobRunState'],
-                            'execution_time': status['ExecutionTime']
-                        }
+                    #add info to the json
+                    item = {
+                        'status': status['JobRun']['JobRunState'],
+                        'execution_time': status['JobRun']['ExecutionTime']
+                    }
+                    self.json_results[job_name] = item
 
-            # wait 10 seconds before try to run jobs again
-            time.sleep(10)
+            # wait 20 seconds before try to run jobs again
+            time.sleep(20)
 
-        print(self.json_results)
+        self.assertTrue(len(self.json_results) == len(self.job_list))
 
 
 if __name__ == '__main__':
