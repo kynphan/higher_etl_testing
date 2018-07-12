@@ -53,6 +53,30 @@ class test_nightly_edu(unittest.TestCase):
             'EDUDirect_to_parquet_current_dimensions': {
                 'args': {}
             },
+            'EDUDirect_user_agent': {
+                'args': {
+                    '--TYPE': 'historical',
+                }
+            },
+            'EDUDirect_nightly_dummy_user_agent': {
+                'args': {}
+            },
+            'EDUDirect_to_staging': {
+                'args': {
+                    '--TYPE': 'historical',
+                    '--ENVIRONMENT': 'dev',
+                    '--START_DATE': '000',
+                    '--END_DATE': '000',
+                }
+            },
+            'EDUDirect_related_subject': {
+                'args': {
+                    '--TYPE': 'historical',
+                    '--ENVIRONMENT': 'dev',
+                    '--START_DATE': '000',
+                    '--END_DATE': '000',
+                }
+            },
         }
 
 
