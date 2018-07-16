@@ -453,11 +453,12 @@ for field in new_fields:
     fact_df = fact_df.withColumn(field['name'], lit(field['value']))
 
 # added sufic for remaining tables
-rename_mapping = dict(zip(
-    ['data_source', 'data_source_name'],
-    ['engine_version', 'engine_version_name']
-))
-fact_df.select([col(c).alias(rename_mapping.get(c, c)) for c in fact_df.columns])
+rename_mapping = {
+    'data_source': 'data_source_name',
+    'engine_version': 'engine_version_name',
+    'user_agent': 'device_os_info_name'
+}
+fact_df = fact_df.select([col(c).alias(rename_mapping.get(c, c)) for c in fact_df.columns])
 
 # create a flag column to show that the access comes from a mobile device
 fact_df = fact_df.withColumn('mobile_flag', when(col('device_type_name') == 'mobile', 1 ).otherwise(0))
