@@ -450,7 +450,7 @@ for field in new_fields:
 fact_df = fact_df.withColumn('mobile_flag', when(col('device_type') == 'mobile', 1 ).otherwise(0))
 
 # Join events table with list of internal IPs
-internal_df = dfu.get_dyf_frame(database= links_db, tbl= 'internal_ip_table').toDF()
+internal_df = dfu.get_dyf_frame(database= links_db, tbl=internal_ip_table ).toDF()
 fact_df.join(internal_df, fact_df.ip == internal_df.ip_address, how='left')
 
 # create a new column to specify when the click it's internal(belongs to the specified offices list)
