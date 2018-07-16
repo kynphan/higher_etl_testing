@@ -103,15 +103,36 @@ class test_nightly_edu(unittest.TestCase):
                  ]
             },
             'EDUDirect_to_parquet_current_dimensions': {
-                 'args': {}
+                 'args': {},
+                 'bucket': 'highereducation-dw-transformed-data',
+                 'files': [
+                    'cddirect_production_affiliate',
+                    'cddirect_production_country',
+                    'cddirect_production_lead_cap',
+                    'cddirect_production_publisher',
+                    'cddirect_production_school',
+                    'cddirect_production_school_program',
+                    'cddirect_production_school_provider',
+                    'cddirect_production_school_provider_cap',
+                    'cddirect_production_school_provider_category',
+                    'cddirect_production_school_provider_program',
+                    'cddirect_production_school_provider_education_level',
+                    'cddirect_production_state',
+                    'cddirect_production_user',
+                    'cddirect_production_widget_category',
+                    'cddirect_production_widget_degree',
+                    'cddirect_production_widget_subject',
+                    'cddirect_production_widget_degree_recommendation',
+                    'cddirect_production_widget_subject_recommendation',
+                    'form_position_csv',
+                 ]
             },
             'EDUDirect_user_agent': {
-                 'args': {
+                'args': {
                      '--TYPE': 'historical',
-                 }
-            },
-            'EDUDirect_nightly_dummy_user_agent': {
-                 'args': {}
+                },
+                'bucket': 'highereducation-dw-transformed-data',
+                'files': ['user_agent']
             },
             'EDUDirect_to_staging': {
                  'args': {
@@ -119,15 +140,19 @@ class test_nightly_edu(unittest.TestCase):
                      '--ENVIRONMENT': 'dev',
                      '--START_DATE': '000',
                      '--END_DATE': '000',
-                 }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'files': ['lead_fact_table_dev_v1']
             },
             'EDUDirect_related_subject': {
-                 'args': {
+                'args': {
                      '--TYPE': 'historical',
                      '--ENVIRONMENT': 'dev',
                      '--START_DATE': '000',
                      '--END_DATE': '000',
-                 }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'files': ['lead_fact_table_dev']
             },
         }
 
