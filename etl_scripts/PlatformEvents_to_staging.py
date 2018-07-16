@@ -246,21 +246,11 @@ fact_fields = [
         alias= 'ip_address',
         replace_null= replace_null_name
     ),
-    dict(
-        name= 'data_source',
-        alias= 'data_source_name',
-        replace_null= replace_null_name
-    ),
-    dict(
-        name= 'engine_version',
-        alias= 'engine_version_name',
-        replace_null= replace_null_name
-    )
 ]
 
 #Add new fields to the final fact table
 new_fields = [
-    dict(name= 'data_source_name', value= 'platform-events'),
+    dict(name= 'data_source', value= 'platform-events'),
     dict(name= 'product_name', value= 'exclusive'),
     dict(name= 'product_code_name', value= 'EXCL'),
     dict(name= 'lead_cnt_base', value= 1),
@@ -275,7 +265,6 @@ new_fields = [
     dict(name= 'military_flag', value= replace_null_name),
     dict(name= 'status_name', value= default_status_value),
     dict(name= 'user_agent', value= replace_null_name),
-    dict(name= 'cpu_architecture', value= replace_null_name),
     dict(name= 'engine_name', value= replace_null_name),
     dict(name= 'engine_version_name', value= replace_null_name),
     # added consolidation fields
@@ -283,17 +272,18 @@ new_fields = [
     dict(name= 'first_form_category_id', value= replace_null_numeric),
     dict(name= 'first_form_degree_id', value= replace_null_numeric),
     dict(name= 'first_form_subject_id', value= replace_null_numeric),
+    dict(name= 'lead_dual_consent_cnt_base', value= replace_null_numeric),
+    dict(name= 'lead_test_cnt_base', value= replace_null_numeric),
     # string values
     dict(name= 'first_form_category_name', value= replace_null_name),
     dict(name= 'first_form_category_slug_name', value= replace_null_name),
     dict(name= 'first_form_degree_name', value= replace_null_name),
     dict(name= 'first_form_degree_slug_name', value= replace_null_name),
     dict(name= 'first_form_subject_name', value= replace_null_name),
+    dict(name= 'subject_relation', value= replace_null_name),
     dict(name= 'first_form_subject_slug_name', value= replace_null_name),
-    dict(name= 'form_position_group_name', value= replace_null_name),
-    dict(name= 'form_position_slug_name', value= replace_null_name),
-    dict(name= 'lead_dual_consent_cnt_base', value= replace_null_name),
-    dict(name= 'lead_test_cnt_base', value= replace_null_name),
+    dict(name= 'form_position_group_name', value='form 1'),
+    dict(name= 'form_position_slug_name', value='form-1'),
 ]
 
 fact_df = normalized_events.alias('fact_df')
@@ -461,6 +451,13 @@ fact_df = apply_function(fact_df, 'lower', ['country_name', 'state_name', 'state
 # Add extra fields to the fact table
 for field in new_fields:
     fact_df = fact_df.withColumn(field['name'], lit(field['value']))
+
+# added sufic for remaining tables
+rename_mapping = dict(zip(
+    ['data_source', 'data_source_name'],
+    ['engine_version', 'engine_version_name']
+))
+fact_df.select([col(c).alias(rename_mapping.get(c, c)) for c in fact_df.columns])
 
 # create a flag column to show that the access comes from a mobile device
 fact_df = fact_df.withColumn('mobile_flag', when(col('device_type_name') == 'mobile', 1 ).otherwise(0))
