@@ -202,7 +202,7 @@ fact_fields = [
     ),
     dict(
         name= 'browserMajor',
-        alias= 'browser_major',
+        alias= 'browser_major_name',
         replace_null= replace_null_name
     ),
     dict(
@@ -212,22 +212,22 @@ fact_fields = [
     ),
     dict(
         name= 'browserVersion',
-        alias= 'browser_version',
+        alias= 'browser_version_name',
         replace_null= replace_null_name
     ),
     dict(
         name= 'deviceModel',
-        alias= 'device_model',
+        alias= 'device_model_name',
         replace_null= replace_null_name
     ),
     dict(
         name= 'deviceType',
-        alias= 'device_type',
+        alias= 'device_type_name',
         replace_null= replace_null_name
     ),
     dict(
         name= 'deviceVendor',
-        alias= 'device_vendor',
+        alias= 'device_vendor_name',
         replace_null= replace_null_name
     ),
     dict(
@@ -238,6 +238,11 @@ fact_fields = [
     dict(
         name= 'osVersion',
         alias= 'os_version',
+        replace_null= replace_null_name
+    ),
+    dict(
+        name= 'ip',
+        alias= 'ip_address',
         replace_null= replace_null_name
     )
 ]
@@ -388,6 +393,23 @@ fact_df = select_fields(fact_df, ['fact_df.*', 'account_manager_name'])
 
 final_fields.extend(['account_manager_name'])
 
+# add extra names to be renamed
+fact_fields.append(
+    dict(
+        name= 'data_source',
+        alias= 'data_source_name',
+        replace_null= replace_null_name
+    )
+)
+fact_fields.append(
+    dict(
+        name= 'engine_version',
+        alias= 'engine_version_name',
+        replace_null= replace_null_name
+    )
+)
+
+
 # Select definitive fields
 fields_to_select = map(
     lambda field: col('fact_df.' + field['name']).alias(field['alias']),
@@ -447,14 +469,15 @@ for field in new_fields:
     fact_df = fact_df.withColumn(field['name'], lit(field['value']))
 
 # create a flag column to show that the access comes from a mobile device
-fact_df = fact_df.withColumn('mobile_flag', when(col('device_type') == 'mobile', 1 ).otherwise(0))
+fact_df = fact_df.withColumn('mobile_flag', when(col('device_type_name') == 'mobile', 1 ).otherwise(0))
 
 # Join events table with list of internal IPs
 internal_df = dfu.get_dyf_frame(database= links_db, tbl=internal_ip_table ).toDF()
-fact_df.join(internal_df, fact_df.ip == internal_df.ip_address, how='left')
+fact_df.join(internal_df, fact_df.ip_address == internal_df.ip_address, how='left')
 
 # create a new column to specify when the click it's internal(belongs to the specified offices list)
 fact_df = fact_df.withColumn('internal_visit_flag', when(col('ip_address').isNotNull() , 1).otherwise(0))
+
 
 # Cases
 fact_df = fact_df.withColumn('country_local_flag',
