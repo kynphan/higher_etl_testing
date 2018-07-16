@@ -447,7 +447,7 @@ for field in new_fields:
     fact_df = fact_df.withColumn(field['name'], lit(field['value']))
 
 # create a flag column to show that the access comes from a mobile device
-fact_df = fact_df.withColumn('mobile_flag', when(col('devicetype') == 'mobile', 1 ).otherwise(0))
+fact_df = fact_df.withColumn('mobile_flag', when(col('device_type') == 'mobile', 1 ).otherwise(0))
 
 # Join events table with list of internal IPs
 internal_df = dfu.get_dyf_frame(database= links_db, tbl= 'internal_ip_table').toDF()
