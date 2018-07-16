@@ -53,6 +53,7 @@ category = dfu.get_dyf_frame(database= edudirect_db, tbl= 'cddirect_production_w
 user = dfu.get_dyf_frame(database= edudirect_db, tbl= 'cddirect_production_user').toDF()
 
 replace_null_name = 'missing_name'
+default_status_value = 'accepted'
 replace_null_numeric = 0
 replace_null_id = 'missing_id'
 
@@ -272,7 +273,7 @@ new_fields = [
     dict(name= 'grad_year_name', value= replace_null_name),
     dict(name= 'years_diff_grad_base', value= replace_null_name),
     dict(name= 'military_flag', value= replace_null_name),
-    dict(name= 'status_name', value= replace_null_name),
+    dict(name= 'status_name', value= default_status_value),
     dict(name= 'user_agent', value= replace_null_name),
     dict(name= 'cpu_architecture', value= replace_null_name),
     dict(name= 'engine_name', value= replace_null_name),
