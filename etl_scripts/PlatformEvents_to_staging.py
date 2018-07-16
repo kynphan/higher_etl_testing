@@ -244,12 +244,22 @@ fact_fields = [
         name= 'ip',
         alias= 'ip_address',
         replace_null= replace_null_name
+    ),
+    dict(
+        name= 'data_source',
+        alias= 'data_source_name',
+        replace_null= replace_null_name
+    ),
+    dict(
+        name= 'engine_version',
+        alias= 'engine_version_name',
+        replace_null= replace_null_name
     )
 ]
 
 #Add new fields to the final fact table
 new_fields = [
-    dict(name= 'data_source', value= 'platform-events'),
+    dict(name= 'data_source_name', value= 'platform-events'),
     dict(name= 'product_name', value= 'exclusive'),
     dict(name= 'product_code_name', value= 'EXCL'),
     dict(name= 'lead_cnt_base', value= 1),
@@ -266,7 +276,7 @@ new_fields = [
     dict(name= 'user_agent', value= replace_null_name),
     dict(name= 'cpu_architecture', value= replace_null_name),
     dict(name= 'engine_name', value= replace_null_name),
-    dict(name= 'engine_version', value= replace_null_name),
+    dict(name= 'engine_version_name', value= replace_null_name),
     # added consolidation fields
     # numeric values
     dict(name= 'first_form_category_id', value= replace_null_numeric),
@@ -392,23 +402,6 @@ fact_df = fact_df.withColumn('account_manager_name', concat(col('user.firstname'
 fact_df = select_fields(fact_df, ['fact_df.*', 'account_manager_name'])
 
 final_fields.extend(['account_manager_name'])
-
-# add extra names to be renamed
-fact_fields.append(
-    dict(
-        name= 'data_source',
-        alias= 'data_source_name',
-        replace_null= replace_null_name
-    )
-)
-fact_fields.append(
-    dict(
-        name= 'engine_version',
-        alias= 'engine_version_name',
-        replace_null= replace_null_name
-    )
-)
-
 
 # Select definitive fields
 fields_to_select = map(
