@@ -39,12 +39,24 @@ class test_daily_edu(unittest.TestCase):
         # define the jobs list, including initial params
         self.job_list = {
             'EDUDirect_to_parquet_current_day': {
-                'args': {}
+                'bucket' : 'highereducation-dw-transformed-data',
+                'initial_folders': ['EDUDirectDB-current'],
+                'tablees': [
+                    'cddirect_production_lead',
+                    'cddirect_production_visitor'
+                ]
             },
             'EDUDirect_user_agent': {
                 'args': {
                     '--TYPE': 'current_day'
-                }
+                },
+                'bucket' : 'highereducation-dw-transformed-data',
+                'initial_folders': [
+                    'EDUDirectDB-current'
+                ],
+                'tables': [
+                    'user_agent'
+                ]
             },
             'EDUDirect_to_staging': {
                 'args': {
@@ -52,7 +64,13 @@ class test_daily_edu(unittest.TestCase):
                     '--ENVIRONMENT': 'dev',
                     '--START_DATE': '000',
                     '--END_DATE': '000',
-                }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'inital_folders': ['EDUDirectDB','tmp'],
+                'tables': [
+                    'lead_fact_table_dev_current_v1'
+                ],
+                'date_partition': True
             },
             'EDUDirect_related_subject': {
                 'args': {
@@ -60,6 +78,12 @@ class test_daily_edu(unittest.TestCase):
                     '--ENVIRONMENT': 'dev',
                     '--START_DATE': '000',
                     '--END_DATE': '000',
-                }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'inital_folders': ['EDUDirectDB','dev'],
+                'tables': [
+                    'lead_fact_table_env_current'
+                ],
+                'date_partition': True
             },
         }

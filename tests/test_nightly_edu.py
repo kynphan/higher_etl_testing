@@ -11,7 +11,7 @@ import logging
 import boto3
 import json
 
-from utilities import  get_json_file, get_job_object, get_job_state
+from utilities import  get_json_file, get_job_object, get_job_state, check_file_s3, get_date_folders
 
 import os
 import sys
@@ -44,15 +44,22 @@ class test_nightly_edu(unittest.TestCase):
                      '--MONTHS': '3',
                      '--ALL_TABLES': 'False'
                 },
-                'bucket' : 'highereducation-dw-transformed-data',
-                'files': [
-                    'platform_events_public_normalized_events'
-                ]
+                'bucket': 'highereducation-dw-transformed-data',
+                'date_partition': True,
+                'initial_folders': [
+                    'EDUDirectDB'
+                ],
+                'tables': [
+                    'cddirect_production_lead',
+                    'cddirect_production_visitor'
+                ],
             },
             'EDUDirect_to_parquet_replace': {
-                'args': {},
-                'bucket' : 'highereducation-dw-transformed-data',
-                'files': [
+                'bucket': 'highereducation-dw-transformed-data',
+                'initial_folders': [
+                   'EDUDirectDB'
+                ],
+                'tables': [
                     'cddirect_production_lead_cap',
                     'cddirect_production_migration_versions',
                     'cddirect_production_school_campus_program',
@@ -63,98 +70,99 @@ class test_nightly_edu(unittest.TestCase):
                     'cddirect_production_zip_state'
                 ]
             },
-             'EDUDirect_to_parquet_new_snapshot': {
-                 'args': {},
-                 'bucket': 'highereducation-dw-transformed-data',
-                 'files': [
-                    'cddirect_production_affiliate',
-                    'cddirect_production_country',
-                    'cddirect_production_education_level',
-                    'cddirect_production_publisher',
-                    'cddirect_production_school',
-                    'cddirect_production_school_alias',
-                    'cddirect_production_school_campus',
-                    'cddirect_production_school_eligible_country',
-                    'cddirect_production_school_eligible_state',
-                    'cddirect_production_school_program',
-                    'cddirect_production_school_program_ineligible_state',
-                    'cddirect_production_school_provider',
-                    'cddirect_production_school_provider_campus',
-                    'cddirect_production_school_provider_cap',
-                    'cddirect_production_school_provider_cap_program',
-                    'cddirect_production_school_provider_cap_publisher',
-                    'cddirect_production_school_provider_cap_state',
-                    'cddirect_production_school_provider_category',
-                    'cddirect_production_school_provider_education_level',
-                    'cddirect_production_school_provider_leadid_flag',
-                    'cddirect_production_school_provider_program',
-                    'cddirect_production_school_publisher',
-                    'cddirect_production_school_targus_score',
-                    'cddirect_production_state',
-                    'cddirect_production_tag',
-                    'cddirect_production_targus_score',
-                    'cddirect_production_user',
-                    'cddirect_production_widget_category',
-                    'cddirect_production_widget_degree',
-                    'cddirect_production_widget_degree_recommendation',
-                    'cddirect_production_widget_subject',
-                    'cddirect_production_widget_subject_alias',
-                    'cddirect_production_widget_subject_recommendation',
-                    'form_position_csv'
-                 ]
-            },
-            'EDUDirect_to_parquet_current_dimensions': {
-                 'args': {},
-                 'bucket': 'highereducation-dw-transformed-data',
-                 'files': [
-                    'cddirect_production_affiliate',
-                    'cddirect_production_country',
-                    'cddirect_production_lead_cap',
-                    'cddirect_production_publisher',
-                    'cddirect_production_school',
-                    'cddirect_production_school_program',
-                    'cddirect_production_school_provider',
-                    'cddirect_production_school_provider_cap',
-                    'cddirect_production_school_provider_category',
-                    'cddirect_production_school_provider_program',
-                    'cddirect_production_school_provider_education_level',
-                    'cddirect_production_state',
-                    'cddirect_production_user',
-                    'cddirect_production_widget_category',
-                    'cddirect_production_widget_degree',
-                    'cddirect_production_widget_subject',
-                    'cddirect_production_widget_degree_recommendation',
-                    'cddirect_production_widget_subject_recommendation',
-                    'form_position_csv',
-                 ]
-            },
-            'EDUDirect_user_agent': {
-                'args': {
-                     '--TYPE': 'historical',
-                },
-                'bucket': 'highereducation-dw-transformed-data',
-                'files': ['user_agent']
-            },
-            'EDUDirect_to_staging': {
-                 'args': {
-                     '--TYPE': 'historical',
-                     '--ENVIRONMENT': 'dev',
-                     '--START_DATE': '000',
-                     '--END_DATE': '000',
-                },
-                'bucket': 'highereducation-dw-staging-data',
-                'files': ['lead_fact_table_dev_v1']
-            },
-            'EDUDirect_related_subject': {
-                'args': {
-                     '--TYPE': 'historical',
-                     '--ENVIRONMENT': 'dev',
-                     '--START_DATE': '000',
-                     '--END_DATE': '000',
-                },
-                'bucket': 'highereducation-dw-staging-data',
-                'files': ['lead_fact_table_dev']
-            },
+            #  'EDUDirect_to_parquet_new_snapshot': {
+            #      'bucket': 'highereducation-dw-transformed-data',
+            #      'tables': [
+            #         'cddirect_production_affiliate',
+            #         'cddirect_production_country',
+            #         'cddirect_production_education_level',
+            #         'cddirect_production_publisher',
+            #         'cddirect_production_school',
+            #         'cddirect_production_school_alias',
+            #         'cddirect_production_school_campus',
+            #         'cddirect_production_school_eligible_country',
+            #         'cddirect_production_school_eligible_state',
+            #         'cddirect_production_school_program',
+            #         'cddirect_production_school_program_ineligible_state',
+            #         'cddirect_production_school_provider',
+            #         'cddirect_production_school_provider_campus',
+            #         'cddirect_production_school_provider_cap',
+            #         'cddirect_production_school_provider_cap_program',
+            #         'cddirect_production_school_provider_cap_publisher',
+            #         'cddirect_production_school_provider_cap_state',
+            #         'cddirect_production_school_provider_category',
+            #         'cddirect_production_school_provider_education_level',
+            #         'cddirect_production_school_provider_leadid_flag',
+            #         'cddirect_production_school_provider_program',
+            #         'cddirect_production_school_publisher',
+            #         'cddirect_production_school_targus_score',
+            #         'cddirect_production_state',
+            #         'cddirect_production_tag',
+            #         'cddirect_production_targus_score',
+            #         'cddirect_production_user',
+            #         'cddirect_production_widget_category',
+            #         'cddirect_production_widget_degree',
+            #         'cddirect_production_widget_degree_recommendation',
+            #         'cddirect_production_widget_subject',
+            #         'cddirect_production_widget_subject_alias',
+            #         'cddirect_production_widget_subject_recommendation',
+            #         'form_position_csv'
+            #      ],
+            #      'date_partition': True
+            # },
+            # 'EDUDirect_to_parquet_current_dimensions': {
+            #      'bucket': 'highereducation-dw-transformed-data',
+            #      'initial_folders': ['EDUDirectDB-current'],
+            #      'files': [
+            #         'cddirect_production_affiliate',
+            #         'cddirect_production_country',
+            #         'cddirect_production_lead_cap',
+            #         'cddirect_production_publisher',
+            #         'cddirect_production_school',
+            #         'cddirect_production_school_program',
+            #         'cddirect_production_school_provider',
+            #         'cddirect_production_school_provider_cap',
+            #         'cddirect_production_school_provider_category',
+            #         'cddirect_production_school_provider_program',
+            #         'cddirect_production_school_provider_education_level',
+            #         'cddirect_production_state',
+            #         'cddirect_production_user',
+            #         'cddirect_production_widget_category',
+            #         'cddirect_production_widget_degree',
+            #         'cddirect_production_widget_subject',
+            #         'cddirect_production_widget_degree_recommendation',
+            #         'cddirect_production_widget_subject_recommendation',
+            #         'form_position_csv',
+            #      ]
+            # },
+            # 'EDUDirect_user_agent': {
+            #     'args': {
+            #          '--TYPE': 'historical',
+            #     },
+            #     'bucket': 'highereducation-dw-transformed-data',
+            #     'files': ['user_agent']
+            # },
+            # 'EDUDirect_to_staging': {
+            #      'args': {
+            #          '--TYPE': 'historical',
+            #          '--ENVIRONMENT': 'dev',
+            #          '--START_DATE': '000',
+            #          '--END_DATE': '000',
+            #     },
+            #     'bucket': 'highereducation-dw-staging-data',
+            #     'initial_folders': ['EDUDirectDB', 'tmp'],
+            #     'files': ['lead_fact_table_dev_v1']
+            # },
+            # 'EDUDirect_related_subject': {
+            #     'args': {
+            #          '--TYPE': 'historical',
+            #          '--ENVIRONMENT': 'dev',
+            #          '--START_DATE': '000',
+            #          '--END_DATE': '000',
+            #     },
+            #     'bucket': 'highereducation-dw-staging-data',
+            #     'files': ['lead_fact_table_dev']
+            # },
         }
 
         # initialize logger
@@ -178,14 +186,14 @@ class test_nightly_edu(unittest.TestCase):
                 job_run_id = None
                 if 'job_run_id' in job:
                     job_run_id = job['JobRunId']
-                    pending_jobs[job_name]['JobRunId'] = job_run_id
+                    pending_jobs[job_name]['JobRunId'] = job
                     del pending_jobs_to_start[job_name]
                 else:
                     args = job['args'] if 'args' in job else {}
                     job_object = get_job_object(self.glue, job_name , args)
                     if job_object and 'JobRunId' in job_object:    
-                        job_run_id = job_object['JobRunId']
-                        pending_jobs[job_name]['JobRunId'] = job_run_id
+                        job['JobRunId'] = job_object['JobRunId']
+                        pending_jobs[job_name]['JobRunId'] = job
                         del pending_jobs_to_start[job_name]
 
         
@@ -200,9 +208,30 @@ class test_nightly_edu(unittest.TestCase):
                     del pending_jobs[job_name]
 
                     #add info to the json
+                    files_created = {}
+                    if job_status in ['SUCCEEDED']:
+                        bucket = job['bucket'] if 'bucket' in job else ''
+                        if len(bucket) > 0:
+                            files = job['files'] if 'files' in job else []
+                            tables = job['tables'] if 'tables' in job else []
+                            initial_folders = job['initial_folders'] if 'initial_folders' in job else []
+                            date_partition = job['date_partition'] if 'date_partition' in job else False
+                            
+                            print(job, date_partition)
+                            if(len(tables)>0):
+                                folder_names = get_date_folders(tables, date_partition, 3, initial_folders)
+                                for f in folder_names:
+                                    file_status = check_file_s3(self.s3, bucket, f)
+                                    files_created[f] = file_status
+                            elif(len(files) > 0):
+                                for f in files:
+                                    file_status = check_file_s3(self.s3, bucket, f)
+                                    files_created[f] = file_status
+
                     item = {
-                        'status': status['JobRun']['JobRunState'],
-                        'execution_time': status['JobRun']['ExecutionTime']
+                        'status': job_status,
+                        'execution_time': status['JobRun']['ExecutionTime'],
+                        'files_results_status': files_created
                     }
                     # save into json file
                     self.json_results[job_name] = item
@@ -210,15 +239,10 @@ class test_nightly_edu(unittest.TestCase):
                     # save results into logger
                     logger.info(job_name, extra=item)
 
-            print(self.json_results)
             # wait 20 seconds before try to run jobs again
             time.sleep(20)
 
-        print((self.json_results)
-        # save json containing all the results
-        with open('results/test_nightly.json', 'w') as outfile:
-            json.dump(self.json_results, outfile)
-
+        print(self.json_results)
         self.assertTrue(len(self.json_results) == len(self.job_list))
 
 
