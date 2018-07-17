@@ -55,30 +55,38 @@ def get_month_boundaries(number_months= 1, start_date= date.today()):
 
 def get_date_folders(tables, date_partition=False, months=0, initial_folders = []):
     folder_names = []
-    tmp = []
+    folders = []
     for f in initial_folders:
-        tmp.append(f)
+        folders.append(f)
 
     for table in tables:
-        tmp.append(table)
 
+        date_folders = []
         if(date_partition):
-            if(months):
+            if(months > 0):
                 for window in get_month_boundaries(months):
+                    date_folders = []
                     init_date = window[0]
 
                     # add date format
-                    tmp.append('year={}'.format(init_date.year))
-                    tmp.append('month={}'.format(init_date.month))
-                    tmp.append('day={}'.format(init_date.day))
+                    date_folders.append('year={}'.format(init_date.year))
+                    date_folders.append('month={}'.format(init_date.month))
+                    date_folders.append('day={}'.format(init_date.day))
+
+                    full_path = folders + [table] + date_folders
+                    print(full_path, os.path.join(*full_path))
+                    folder_names.append(os.path.join(*full_path))
+            
             else:
                 today = date.today()
-                tmp.append('year={}'.format(today.year))
-                tmp.append('month={}'.format(today.month))
-                tmp.append('day={}'.format(today.day))
+                date_folders.append('year={}'.format(today.year))
+                date_folders = [].append('month={}'.format(today.month))
+                date_folders = [].append('day={}'.format(today.day))
 
-        folder_names.append(os.path.join(*tmp))
-        tmp = []
+                full_path = folders + [table] + date_folders
+                print(full_path, os.path.join(*full_path))
+                folder_names.append(os.path.join(*full_path))
+
 
     return folder_names
 
