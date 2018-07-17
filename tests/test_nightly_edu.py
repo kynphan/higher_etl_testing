@@ -40,27 +40,100 @@ class test_nightly_edu(unittest.TestCase):
         # define the jobs list, including initial params
         self.job_list = {
             'EDUDirect_to_parquet_last_N_months': {
-                 'args': {
+                'args': {
                      '--MONTHS': '3',
                      '--ALL_TABLES': 'False'
-                 }
+                },
+                'bucket' : 'highereducation-dw-transformed-data',
+                'files': [
+                    'platform_events_public_normalized_events'
+                ]
             },
             'EDUDirect_to_parquet_replace': {
-                'args': {}
+                'args': {},
+                'bucket' : 'highereducation-dw-transformed-data',
+                'files': [
+                    'cddirect_production_lead_cap',
+                    'cddirect_production_migration_versions',
+                    'cddirect_production_school_campus_program',
+                    'cddirect_production_school_criteria',
+                    'cddirect_production_school_criteria_affiliate',
+                    'cddirect_production_school_multilead_segment',
+                    'cddirect_production_visitor_tag',
+                    'cddirect_production_zip_state'
+                ]
             },
              'EDUDirect_to_parquet_new_snapshot': {
-                 'args': {}
+                 'args': {},
+                 'bucket': 'highereducation-dw-transformed-data',
+                 'files': [
+                    'cddirect_production_affiliate',
+                    'cddirect_production_country',
+                    'cddirect_production_education_level',
+                    'cddirect_production_publisher',
+                    'cddirect_production_school',
+                    'cddirect_production_school_alias',
+                    'cddirect_production_school_campus',
+                    'cddirect_production_school_eligible_country',
+                    'cddirect_production_school_eligible_state',
+                    'cddirect_production_school_program',
+                    'cddirect_production_school_program_ineligible_state',
+                    'cddirect_production_school_provider',
+                    'cddirect_production_school_provider_campus',
+                    'cddirect_production_school_provider_cap',
+                    'cddirect_production_school_provider_cap_program',
+                    'cddirect_production_school_provider_cap_publisher',
+                    'cddirect_production_school_provider_cap_state',
+                    'cddirect_production_school_provider_category',
+                    'cddirect_production_school_provider_education_level',
+                    'cddirect_production_school_provider_leadid_flag',
+                    'cddirect_production_school_provider_program',
+                    'cddirect_production_school_publisher',
+                    'cddirect_production_school_targus_score',
+                    'cddirect_production_state',
+                    'cddirect_production_tag',
+                    'cddirect_production_targus_score',
+                    'cddirect_production_user',
+                    'cddirect_production_widget_category',
+                    'cddirect_production_widget_degree',
+                    'cddirect_production_widget_degree_recommendation',
+                    'cddirect_production_widget_subject',
+                    'cddirect_production_widget_subject_alias',
+                    'cddirect_production_widget_subject_recommendation',
+                    'form_position_csv'
+                 ]
             },
             'EDUDirect_to_parquet_current_dimensions': {
-                 'args': {}
+                 'args': {},
+                 'bucket': 'highereducation-dw-transformed-data',
+                 'files': [
+                    'cddirect_production_affiliate',
+                    'cddirect_production_country',
+                    'cddirect_production_lead_cap',
+                    'cddirect_production_publisher',
+                    'cddirect_production_school',
+                    'cddirect_production_school_program',
+                    'cddirect_production_school_provider',
+                    'cddirect_production_school_provider_cap',
+                    'cddirect_production_school_provider_category',
+                    'cddirect_production_school_provider_program',
+                    'cddirect_production_school_provider_education_level',
+                    'cddirect_production_state',
+                    'cddirect_production_user',
+                    'cddirect_production_widget_category',
+                    'cddirect_production_widget_degree',
+                    'cddirect_production_widget_subject',
+                    'cddirect_production_widget_degree_recommendation',
+                    'cddirect_production_widget_subject_recommendation',
+                    'form_position_csv',
+                 ]
             },
             'EDUDirect_user_agent': {
-                 'args': {
+                'args': {
                      '--TYPE': 'historical',
-                 }
-            },
-            'EDUDirect_nightly_dummy_user_agent': {
-                 'args': {}
+                },
+                'bucket': 'highereducation-dw-transformed-data',
+                'files': ['user_agent']
             },
             'EDUDirect_to_staging': {
                  'args': {
@@ -68,15 +141,19 @@ class test_nightly_edu(unittest.TestCase):
                      '--ENVIRONMENT': 'dev',
                      '--START_DATE': '000',
                      '--END_DATE': '000',
-                 }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'files': ['lead_fact_table_dev_v1']
             },
             'EDUDirect_related_subject': {
-                 'args': {
+                'args': {
                      '--TYPE': 'historical',
                      '--ENVIRONMENT': 'dev',
                      '--START_DATE': '000',
                      '--END_DATE': '000',
-                 }
+                },
+                'bucket': 'highereducation-dw-staging-data',
+                'files': ['lead_fact_table_dev']
             },
         }
 
@@ -137,8 +214,15 @@ class test_nightly_edu(unittest.TestCase):
             # wait 20 seconds before try to run jobs again
             time.sleep(20)
 
+        print((self.json_results)
+        # save json containing all the results
+        with open('results/test_nightly.json', 'w') as outfile:
+            json.dump(self.json_results, outfile)
+
         self.assertTrue(len(self.json_results) == len(self.job_list))
 
 
 if __name__ == '__main__':
     print(unittest.main())
+
+    
