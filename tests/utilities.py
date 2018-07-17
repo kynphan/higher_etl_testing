@@ -3,10 +3,10 @@ from __future__ import print_function
 
 import os
 import sys
-import datetime
+from datetime import date, datetime
+
 import json
 import boto3
-from botocore.errorfactory import ClientError
 import logging, logging.config
 
 def load_log_config():
@@ -16,7 +16,7 @@ def load_log_config():
 
 
 def get_json_file(test_name, json_items):
-    now = datetime.datetime.now()
+    now = datetime.now()
     time_format = now.isoformat()
     current_path = os.path.dirname(os.path.abspath(__file__))
     full_file_name = os.path.join(current_path , 'results' , test_name + '_' + str(time_format) + '.json')
@@ -24,14 +24,68 @@ def get_json_file(test_name, json_items):
         for item in json_items:
             json.dump(item, json_file)
 
+# from he glue liblibs stored in s3
+def first_day_next_month(input_date):
+    next_month = (input_date.month + 1) % 12
+    next_month = 12 if next_month == 0 else next_month
+    next_year = input_date.year + 1 if next_month == 1 else input_date.year
+    return date(next_year, next_month, 1)
+
+
+def first_day_months_ago(months_ago, start_date):
+    month_delta = start_date.month - months_ago
+    month_ago = month_delta % 12
+    month_ago = 12 if month_ago == 0 else month_ago
+
+    year_delta = months_ago / 12
+    year_delta = year_delta + 1 if month_ago > start_date.month else year_delta
+    year_ago = start_date.year - year_delta
+    return start_date.replace(day=1, month= month_ago, year=year_ago)
+
+
+def get_month_boundaries(number_months= 1, start_date= date.today()):
+    tuples = []
+    first_date = first_day_months_ago(number_months - 1, start_date)
+    for x in xrange(number_months):
+        second_date = first_day_next_month(first_date)
+        tuples.append((first_date, second_date))
+        first_date = second_date
+    return tuples
+
+
+def get_date_folders(tables, date_partition=False, months=0, initial_folders = []):
+    folder_names = []
+    tmp = []
+    for f in initial_folders:
+        tmp.append(f)
+
+    for table in tables:
+        tmp.append(table)
+
+        if(date_partition):
+            if(months):
+                for window in get_month_boundaries(months):
+                    init_date = window[0]
+
+                    # add date format
+                    tmp.append('year={}'.format(init_date.year))
+                    tmp.append('month={}'.format(init_date.month))
+                    tmp.append('day={}'.format(init_date.day))
+            else:
+                today = date.today()
+                tmp.append('year={}'.format(today.year))
+                tmp.append('month={}'.format(today.month))
+                tmp.append('day={}'.format(today.day))
+
+        folder_names.append(os.path.join(*tmp))
+        tmp = []
+
+    return folder_names
 
 def check_file_s3(s3, bucket_name, file_name):
-    try:
-        s3.head_object(Bucket=bucket_name, Key=file_name)
-        return True
-    except ClientError:
-        return False
-
+    bucket = s3.Bucket(bucket_name)
+    objs = list(bucket.objects.filter(Prefix=file_name))
+    return len(objs) > 0
 
 
 def get_job_object(glue_service, job_name, args={}):
@@ -51,3 +105,10 @@ def get_job_state(glue_service, job_name, job_run_id):
         RunId=job_run_id
     )
     return status
+
+
+# https://stackoverflow.com/questions/44574548/boto3-s3-sort-bucket-by-last-modified
+def get_bucket_content_sorted(s3, bucket_name):
+    objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
+    get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
+    return [obj['Key'] for obj in sorted(objs, key=get_last_modified)]
