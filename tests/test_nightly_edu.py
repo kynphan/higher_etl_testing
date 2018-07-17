@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import unittest
 import time
+import datetime
 import logmatic
 import logging
 import boto3
@@ -193,6 +194,7 @@ class test_nightly_edu(unittest.TestCase):
                     job_object = get_job_object(self.glue, job_name , args)
                     if job_object and 'JobRunId' in job_object:    
                         job['JobRunId'] = job_object['JobRunId']
+                        job['execution_start'] = datetime.datetime.now()
                         pending_jobs[job_name]['JobRunId'] = job
                         del pending_jobs_to_start[job_name]
 
