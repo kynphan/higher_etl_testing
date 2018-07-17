@@ -275,6 +275,7 @@ new_fields = [
     dict(name= 'lead_dual_consent_cnt_base', value= replace_null_numeric),
     dict(name= 'lead_test_cnt_base', value= replace_null_numeric),
     # string values
+    dict(name= 'created_day_of_week', value= replace_null_name),
     dict(name= 'first_form_category_name', value= replace_null_name),
     dict(name= 'first_form_category_slug_name', value= replace_null_name),
     dict(name= 'first_form_degree_name', value= replace_null_name),
