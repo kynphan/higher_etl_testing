@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import unittest
 import time
+import logmatic
 import logging
 import boto3
 import json
@@ -79,11 +80,21 @@ class test_nightly_edu(unittest.TestCase):
             },
         }
 
+        # initialize logger
+        self.logger = logging.getLogger()
+
+        handler = logging.StreamHandler()
+        handler.setFormatter(logmatic.JsonFormatter())
+
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
 
     def test_job_list(self):
         pending_jobs = self.job_list.copy()
         pending_jobs_to_start = self.job_list.copy()
 
+        # get logger
+        logger = logging.getLogger("test")
         while(len(pending_jobs_to_start)> 0):
             for job_name, job in pending_jobs_to_start.items():
                 # have we already started this job?
@@ -93,7 +104,8 @@ class test_nightly_edu(unittest.TestCase):
                     pending_jobs[job_name]['JobRunId'] = job_run_id
                     del pending_jobs_to_start[job_name]
                 else:
-                    job_object = get_job_object(self.glue, job_name , job['args'])
+                    args = job['args'] if 'args' in job else {}
+                    job_object = get_job_object(self.glue, job_name , args)
                     if job_object and 'JobRunId' in job_object:    
                         job_run_id = job_object['JobRunId']
                         pending_jobs[job_name]['JobRunId'] = job_run_id
@@ -115,8 +127,13 @@ class test_nightly_edu(unittest.TestCase):
                         'status': status['JobRun']['JobRunState'],
                         'execution_time': status['JobRun']['ExecutionTime']
                     }
+                    # save into json file
                     self.json_results[job_name] = item
 
+                    # save results into logger
+                    logger.info(job_name, extra=item)
+
+            print(self.json_results)
             # wait 20 seconds before try to run jobs again
             time.sleep(20)
 
