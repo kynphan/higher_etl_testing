@@ -43,7 +43,7 @@ def first_day_months_ago(months_ago, start_date):
     year_delta = months_ago / 12
     year_delta = year_delta + 1 if month_ago > start_date.month else year_delta
     year_ago = start_date.year - year_delta
-    return start_date.replace(day=1, month= month_ago, year=year_ago)
+    return start_date.replace(day=1, month=month_ago, year=year_ago)
 
 
 def get_month_boundaries(number_months=1, start_date= date.today()):
@@ -77,7 +77,6 @@ def get_date_folders(tables, date_partition=False, months=0, initial_folders = [
                     date_folders.append('day={}'.format(init_date.day))
 
                     full_path = folders + [table] + date_folders
-                    print(full_path, os.path.join(*full_path))
                     folder_names.append(os.path.join(*full_path))
             
             else:
@@ -87,7 +86,6 @@ def get_date_folders(tables, date_partition=False, months=0, initial_folders = [
                 date_folders = [].append('day={}'.format(today.day))
 
                 full_path = folders + [table] + date_folders
-                print(full_path, os.path.join(*full_path))
                 folder_names.append(os.path.join(*full_path))
 
     return folder_names
@@ -122,7 +120,7 @@ def get_job_state(glue_service, job_name, job_run_id):
     return status
 
 
-def run_jobs(glue, job_list, json_results, logger):
+def run_jobs(glue, s3, job_list, json_results, logger):
     pending_jobs = job_list.copy()
     pending_jobs_to_start = job_list.copy()
 
@@ -132,9 +130,8 @@ def run_jobs(glue, job_list, json_results, logger):
                 job_object = get_job_object(glue, job_name, args)
                 if job_object and 'JobRunId' in job_object:    
                     job['JobRunId'] = job_object['JobRunId']
-                    print(job)
                     job['execution_start'] = datetime.now()
-                    pending_jobs[job_name]['JobRunId'] = job
+                    pending_jobs[job_name] = job
                     del pending_jobs_to_start[job_name]
 
     while(len(pending_jobs) > 0):
@@ -143,7 +140,8 @@ def run_jobs(glue, job_list, json_results, logger):
             job_run_id = job['JobRunId']
             status = get_job_state(glue, job_name, job_run_id)
             job_status = status['JobRun']['JobRunState']
-            if job_status not in ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']:
+            status_list = ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']
+            if job_status not in status_list:
                 # remove job from pending list
                 del pending_jobs[job_name]
 
@@ -160,16 +158,14 @@ def run_jobs(glue, job_list, json_results, logger):
                         if(len(tables) > 0):
                             folder_names = get_date_folders(tables, date_partition, 3, initial_folders)
                             for f in folder_names:
-                                file_status = check_file_s3(self.s3, bucket, f)
+                                file_status = check_file_s3(s3, bucket, f)
                                 files_created[f] = file_status
                         elif(len(files) > 0):
                             for f in files:
-                                file_status = check_file_s3(self.s3, bucket, f)
+                                file_status = check_file_s3(s3, bucket, f)
                                 files_created[f] = file_status
-
                 item = {
                     'status': job_status,
-                    'args': job['args'],
                     'execution_time': status['JobRun']['ExecutionTime'],
                     'files_results_status': files_created
                 }
@@ -185,8 +181,16 @@ def run_jobs(glue, job_list, json_results, logger):
     return json_results
 
 
-# https://stackoverflow.com/questions/44574548/boto3-s3-sort-bucket-by-last-modified
-def get_bucket_content_sorted(s3, bucket_name):
+def get_bucket_content(s3, bucket_name, folders_prefix='', file_extension=''):
     objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
-    get_last_modified = lambda obj: int(obj['LastModified'].strftime('%s'))
-    return [obj['Key'] for obj in sorted(objs, key=get_last_modified)]
+    for obj in objs:
+        key = obj['Key']
+        if key.startswith(folders_prefix) and key.endswith(file_extension):
+            yield key
+
+
+def check_files_date_creation(files_list, creation_date):
+    for obj in files_list:
+        file_creation_date = obj.creation_date
+        if file_creation_date >= creation_date:
+            yield key
