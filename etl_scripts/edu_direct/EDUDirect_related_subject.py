@@ -23,6 +23,8 @@ args = getResolvedOptions(sys.argv, ['JOB_NAME', 'ENVIRONMENT', 'TYPE', 'START_D
 
 JOB_NAME = args['JOB_NAME']
 ENVIRONMENT = args['ENVIRONMENT']
+DATABASE = args['DATABASE']
+# possible values = ['highereducation-dw-edudirectdb-parquet-current', 'highereducation-dw-edudirectdb-parquet']
 TYPE = None
 START_DATE = args['START_DATE']
 END_DATE = args['END_DATE']
@@ -30,16 +32,14 @@ END_DATE = args['END_DATE']
 fact_table_database = 'highereducation-dw-edudirectdb-staging-dev'
 fact_table_v1= ''
 fact_table_name = ''
-database = ''
+database = DATABASE
 
 if args['TYPE'] == 'current_day':
     fact_table_v1 = 'lead_fact_table_' + ENVIRONMENT + '_current_v1'
     fact_table_name = 'lead_fact_table_' + ENVIRONMENT + '_current'
-    database = 'highereducation-dw-edudirectdb-parquet-current'
 else:
     fact_table_v1 = 'lead_fact_table_' + ENVIRONMENT + '_v1'
     fact_table_name = 'lead_fact_table_' + ENVIRONMENT
-    database = 'highereducation-dw-edudirectdb-parquet'
 
 spark = glueContext.spark_session
 job = Job(glueContext)
