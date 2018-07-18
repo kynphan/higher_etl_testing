@@ -4,10 +4,12 @@ from __future__ import print_function
 import os
 import sys
 from datetime import date, datetime
+import time
 
 import json
 import boto3
 import logging, logging.config
+
 
 def load_log_config():
     root = logging.getLogger()
@@ -19,10 +21,11 @@ def get_json_file(test_name, json_items):
     now = datetime.now()
     time_format = now.isoformat()
     current_path = os.path.dirname(os.path.abspath(__file__))
-    full_file_name = os.path.join(current_path , 'results' , test_name + '_' + str(time_format) + '.json')
+    full_file_name = os.path.join(current_path, 'results' , test_name + '_' + str(time_format) + '.json')
     with open(full_file_name, 'w+') as json_file:
         for item in json_items:
             json.dump(item, json_file)
+
 
 # from he glue liblibs stored in s3
 def first_day_next_month(input_date):
@@ -43,7 +46,7 @@ def first_day_months_ago(months_ago, start_date):
     return start_date.replace(day=1, month= month_ago, year=year_ago)
 
 
-def get_month_boundaries(number_months= 1, start_date= date.today()):
+def get_month_boundaries(number_months=1, start_date= date.today()):
     tuples = []
     first_date = first_day_months_ago(number_months - 1, start_date)
     for x in xrange(number_months):
@@ -87,8 +90,8 @@ def get_date_folders(tables, date_partition=False, months=0, initial_folders = [
                 print(full_path, os.path.join(*full_path))
                 folder_names.append(os.path.join(*full_path))
 
-
     return folder_names
+
 
 def check_file_s3(s3, bucket_name, file_name):
     bucket = s3.Bucket(bucket_name)
@@ -113,6 +116,69 @@ def get_job_state(glue_service, job_name, job_run_id):
         RunId=job_run_id
     )
     return status
+
+
+def run_jobs(glue, job_list, json_results, logger):
+    pending_jobs = job_list.copy()
+    pending_jobs_to_start = job_list.copy()
+
+    while(len(pending_jobs_to_start) > 0):
+            for job_name, job in pending_jobs_to_start.items():
+                args = job['args'] if 'args' in job else {}
+                job_object = get_job_object(glue, job_name, args)
+                if job_object and 'JobRunId' in job_object:    
+                    job['JobRunId'] = job_object['JobRunId']
+                    print(job)
+                    job['execution_start'] = datetime.now()
+                    pending_jobs[job_name]['JobRunId'] = job
+                    del pending_jobs_to_start[job_name]
+
+    while(len(pending_jobs) > 0):
+
+        for job_name, job in pending_jobs.items():
+            job_run_id = job['JobRunId']
+            status = get_job_state(glue, job_name, job_run_id)
+            job_status = status['JobRun']['JobRunState']
+            if job_status not in ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']:
+                # remove job from pending list
+                del pending_jobs[job_name]
+
+                # add info to the json
+                files_created = {}
+                if job_status in ['SUCCEEDED']:
+                    bucket = job['bucket'] if 'bucket' in job else ''
+                    if len(bucket) > 0:
+                        files = job['files'] if 'files' in job else []
+                        tables = job['tables'] if 'tables' in job else []
+                        initial_folders = job['initial_folders'] if 'initial_folders' in job else []
+                        date_partition = job['date_partition'] if 'date_partition' in job else False
+                        
+                        if(len(tables) > 0):
+                            folder_names = get_date_folders(tables, date_partition, 3, initial_folders)
+                            for f in folder_names:
+                                file_status = check_file_s3(self.s3, bucket, f)
+                                files_created[f] = file_status
+                        elif(len(files) > 0):
+                            for f in files:
+                                file_status = check_file_s3(self.s3, bucket, f)
+                                files_created[f] = file_status
+
+                item = {
+                    'status': job_status,
+                    'args': job['args'],
+                    'execution_time': status['JobRun']['ExecutionTime'],
+                    'files_results_status': files_created
+                }
+                # save into json file
+                json_results[job_name] = item
+
+                # save results into logger
+                logger.info(job_name, extra=item)
+
+            # wait 20 seconds before try to run jobs again
+            time.sleep(20)
+
+    return json_results
 
 
 # https://stackoverflow.com/questions/44574548/boto3-s3-sort-bucket-by-last-modified
