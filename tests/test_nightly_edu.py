@@ -40,21 +40,21 @@ class test_nightly_edu(unittest.TestCase):
 
         # define the jobs list, including initial params
         self.job_list = {
-            'EDUDirect_to_parquet_last_N_months': {
-                'args': {
-                     '--MONTHS': '3',
-                     '--ALL_TABLES': 'False'
-                },
-                'bucket': 'highereducation-dw-transformed-data',
-                'date_partition': True,
-                'initial_folders': [
-                    'EDUDirectDB'
-                ],
-                'tables': [
-                    'cddirect_production_lead',
-                    'cddirect_production_visitor'
-                ],
-            },
+            # 'EDUDirect_to_parquet_last_N_months': {
+            #     'args': {
+            #          '--MONTHS': '3',
+            #          '--ALL_TABLES': 'False'
+            #     },
+            #     'bucket': 'highereducation-dw-transformed-data',
+            #     'date_partition': True,
+            #     'initial_folders': [
+            #         'EDUDirectDB'
+            #     ],
+            #     'tables': [
+            #         'cddirect_production_lead',
+            #         'cddirect_production_visitor'
+            #     ],
+            # },
             'EDUDirect_to_parquet_replace': {
                 'bucket': 'highereducation-dw-transformed-data',
                 'initial_folders': [
@@ -69,7 +69,8 @@ class test_nightly_edu(unittest.TestCase):
                     'cddirect_production_school_multilead_segment',
                     'cddirect_production_visitor_tag',
                     'cddirect_production_zip_state'
-                ]
+                ],
+                'file_extension': 'parquet'
             },
             #  'EDUDirect_to_parquet_new_snapshot': {
             #      'bucket': 'highereducation-dw-transformed-data',
@@ -178,10 +179,10 @@ class test_nightly_edu(unittest.TestCase):
     def test_job_list(self):
         # get logger
         logger = logging.getLogger("test")
-        self.json_results = run_jobs(self.glue, self.job_list, self.json_results, self.logger)
+        self.json_results = run_jobs(self.glue, self.s3, self.job_list, self.json_results, logger)
 
         print(self.json_results)
-        with open('results/night_edu.json', 'w') as outfile:
+        with open('results/night_edu.json', 'w+') as outfile:
             json.dump(self.json_results, outfile)
         self.assertTrue(len(self.json_results) == len(self.job_list))
 

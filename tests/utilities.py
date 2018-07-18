@@ -46,7 +46,7 @@ def first_day_months_ago(months_ago, start_date):
     return start_date.replace(day=1, month=month_ago, year=year_ago)
 
 
-def get_month_boundaries(number_months=1, start_date= date.today()):
+def get_month_boundaries(number_months=1, start_date=date.today()):
     tuples = []
     first_date = first_day_months_ago(number_months - 1, start_date)
     for x in xrange(number_months):
@@ -78,7 +78,7 @@ def get_date_folders(tables, date_partition=False, months=0, initial_folders = [
 
                     full_path = folders + [table] + date_folders
                     folder_names.append(os.path.join(*full_path))
-            
+
             else:
                 today = date.today()
                 date_folders.append('year={}'.format(today.year))
@@ -87,6 +87,10 @@ def get_date_folders(tables, date_partition=False, months=0, initial_folders = [
 
                 full_path = folders + [table] + date_folders
                 folder_names.append(os.path.join(*full_path))
+
+        else:
+            full_path = folders + [table]
+            folder_names.append(os.path.join(*full_path))
 
     return folder_names
 
@@ -138,6 +142,7 @@ def run_jobs(glue, s3, job_list, json_results, logger):
 
         for job_name, job in pending_jobs.items():
             job_run_id = job['JobRunId']
+            job_started = job['execution_start']
             status = get_job_state(glue, job_name, job_run_id)
             job_status = status['JobRun']['JobRunState']
             status_list = ['STARTING', 'RUNNING', 'STARTING', 'STOPPING']
@@ -154,12 +159,21 @@ def run_jobs(glue, s3, job_list, json_results, logger):
                         tables = job['tables'] if 'tables' in job else []
                         initial_folders = job['initial_folders'] if 'initial_folders' in job else []
                         date_partition = job['date_partition'] if 'date_partition' in job else False
-                        
+                        file_extension = job['file_extension'] if 'file_extension' in job else ''
+
+                        # test folder creation
                         if(len(tables) > 0):
                             folder_names = get_date_folders(tables, date_partition, 3, initial_folders)
                             for f in folder_names:
                                 file_status = check_file_s3(s3, bucket, f)
                                 files_created[f] = file_status
+
+                            # check the files contained in each one of the folders
+                            for prefix, folder_status in files_created.items():
+                                if folder_status:
+                                    validated_contents = check_bucket_content(s3, bucket, prefix, file_extension)
+                                    files_created[prefix] = validated_contents
+
                         elif(len(files) > 0):
                             for f in files:
                                 file_status = check_file_s3(s3, bucket, f)
@@ -181,16 +195,33 @@ def run_jobs(glue, s3, job_list, json_results, logger):
     return json_results
 
 
-def get_bucket_content(s3, bucket_name, folders_prefix='', file_extension=''):
-    objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
+def get_bucket_content(bucket_name):
+    s3 = boto3.client('s3')
+    return s3.list_objects_v2(Bucket=bucket_name)['Contents']
+    
+
+def check_bucket_content(s3, bucket_name, folder_prefix='', file_extension='', creation_date=''):
+    objs = get_bucket_content(bucket_name)
+    objs_validated = {}
     for obj in objs:
         key = obj['Key']
-        if key.startswith(folders_prefix) and key.endswith(file_extension):
-            yield key
 
+        folder_flag = True
+        if(folder_prefix):
+            if not key.startswith(folder_prefix):
+                folder_flag = False
 
-def check_files_date_creation(files_list, creation_date):
-    for obj in files_list:
-        file_creation_date = obj.creation_date
-        if file_creation_date >= creation_date:
-            yield key
+        extension_flag = True
+        if(file_extension):
+            if not key.endswith(file_extension):
+                extension_flag = False
+
+        date_flag = True
+        if(creation_date):
+            if not obj.creation_date > creation_date:
+                date_flag = False
+
+        objs_validated[key] = folder_flag and extension_flag and date_flag
+
+    return objs_validated
+       
