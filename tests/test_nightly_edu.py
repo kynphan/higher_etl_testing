@@ -167,6 +167,7 @@ class test_nightly_edu(unittest.TestCase):
                 'args': {
                     '--TYPE': 'historical',
                     '--ENVIRONMENT': 'dev',
+                    '--DATABASE': 'highereducation-dw-edudirectdb-parquet-current',
                     '--START_DATE': '000',
                     '--END_DATE': '000',
                 },
