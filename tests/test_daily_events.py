@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-#  Intra daily scheduled jobs for EDU Direct
+#  Intra daily scheduled jobs for platform Events
 #
 from __future__ import print_function
 
@@ -18,7 +18,7 @@ import sys
 sys.path.append('..')
 
 
-class test_nightly_events(unittest.TestCase):
+class test_daily_events(unittest.TestCase):
 
     def setUp(self):
 
@@ -40,7 +40,7 @@ class test_nightly_events(unittest.TestCase):
 
         # define the jobs list, including initial params
         self.job_list = {
-            'PlatformEvents_cap_info_to_parquet': {
+          'PlatformEvents_cap_info_to_parquet': {
                 'args': {
                     '--TYPE': 'current_day'
                 },
@@ -99,7 +99,7 @@ class test_nightly_events(unittest.TestCase):
         logger = logging.getLogger("test")
         self.json_results = run_jobs(self.glue, self.s3, self.job_list, self.json_results, logger)
 
-        with open('results/night_events.json', 'w+') as outfile:
+        with open('results/daily_events.json', 'w+') as outfile:
             json.dump(self.json_results, outfile)
         self.assertTrue(len(self.json_results) == len(self.job_list))
 
