@@ -19,20 +19,19 @@ import dynamic_frame_util as dfu
 import date_util as du
 
 glueContext = GlueContext(SparkContext.getOrCreate())
-args = getResolvedOptions(sys.argv, ['JOB_NAME', 'ENVIRONMENT', 'TYPE', 'START_DATE', 'END_DATE', 'DATABASE'])
+args = getResolvedOptions(sys.argv, ['JOB_NAME', 'ENVIRONMENT', 'TYPE', 'START_DATE', 'END_DATE', 'DATABASE_PARQUET', 'DATABASE_STAG'])
 
 JOB_NAME = args['JOB_NAME']
 ENVIRONMENT = args['ENVIRONMENT']
-DATABASE = args['DATABASE']
-# possible values = ['highereducation-dw-edudirectdb-parquet-current', 'highereducation-dw-edudirectdb-parquet']
+
 TYPE = None
 START_DATE = args['START_DATE']
 END_DATE = args['END_DATE']
 
 fact_table_database = 'highereducation-dw-edudirectdb-staging-dev'
 fact_table_v1= ''
-fact_table_name = ''
-database = DATABASE
+fact_table_name = args['DATABASE_STAG']
+database = args['DATABASE_PARQUET'] # possible values = ['highereducation-dw-edudirectdb-parquet-current', 'highereducation-dw-edudirectdb-parquet']
 
 if args['TYPE'] == 'current_day':
     fact_table_v1 = 'lead_fact_table_' + ENVIRONMENT + '_current_v1'
