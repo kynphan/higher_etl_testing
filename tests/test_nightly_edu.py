@@ -42,8 +42,8 @@ class test_nightly_edu(unittest.TestCase):
         self.job_list = {
             'EDUDirect_to_parquet_last_N_months': {
                 'args': {
-                     '--MONTHS': '3',
-                     '--ALL_TABLES': 'False'
+                        '--MONTHS': '3',
+                        '--ALL_TABLES': 'False'
                 },
                 'bucket': 'highereducation-dw-transformed-data',
                 'date_partition': True,
@@ -59,7 +59,7 @@ class test_nightly_edu(unittest.TestCase):
             'EDUDirect_to_parquet_replace': {
                 'bucket': 'highereducation-dw-transformed-data',
                 'initial_folders': [
-                   'EDUDirectDB'
+                    'EDUDirectDB'
                 ],
                 'tables': [
                     'cddirect_production_lead_cap',
@@ -76,7 +76,7 @@ class test_nightly_edu(unittest.TestCase):
             'EDUDirect_to_parquet_new_snapshot': {
                 'bucket': 'highereducation-dw-transformed-data',
                 'initial_folders': [
-                   'EDUDirectDB'
+                    'EDUDirectDB'
                 ],
                 'tables': [
                     'cddirect_production_affiliate',
@@ -171,9 +171,9 @@ class test_nightly_edu(unittest.TestCase):
                     '--END_DATE': '000',
                 },
                 'bucket': 'highereducation-dw-staging-data',
-            'initial_folders': ['EDUDirectDB', 'env'],
-            'date_partition': True,
-            'file_extension': 'parquet'
+                'initial_folders': ['EDUDirectDB', 'env'],
+                'date_partition': True,
+                'file_extension': 'parquet'
             },
         }
 
