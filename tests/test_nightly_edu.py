@@ -11,7 +11,7 @@ import logging
 import boto3
 import json
 
-from utilities import get_json_file, get_job_object, get_job_state, check_file_s3, get_date_folders, run_jobs
+from utilities import get_json_file, get_job_object, get_job_state, check_file_s3, get_date_folders, run_jobs, get_redshift_connection
 
 import os
 import sys
@@ -31,6 +31,10 @@ class test_nightly_edu(unittest.TestCase):
 
         # Create CloudWatch client
         self.cloudwatch = boto3.client('cloudwatch')
+
+        # configure redshift access
+
+        self.db_conn = get_redshift_connection()
 
         # access s3 storage
         self.s3 = boto3.resource('s3')
@@ -54,7 +58,8 @@ class test_nightly_edu(unittest.TestCase):
                     'cddirect_production_lead',
                     'cddirect_production_visitor'
                 ],
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_to_parquet_replace': {
                 'bucket': 'highereducation-dw-transformed-data',
@@ -71,7 +76,8 @@ class test_nightly_edu(unittest.TestCase):
                     'cddirect_production_visitor_tag',
                     'cddirect_production_zip_state'
                 ],
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_to_parquet_new_snapshot': {
                 'bucket': 'highereducation-dw-transformed-data',
@@ -115,7 +121,8 @@ class test_nightly_edu(unittest.TestCase):
                     'form_position_csv'
                 ],
                 'date_partition': True,
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_to_parquet_current_dimensions': {
                 'bucket': 'highereducation-dw-transformed-data',
@@ -141,7 +148,8 @@ class test_nightly_edu(unittest.TestCase):
                     'cddirect_production_widget_subject_recommendation',
                     'form_position_csv',
                 ],
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_user_agent': {
                 'args': {
@@ -149,7 +157,8 @@ class test_nightly_edu(unittest.TestCase):
                 },
                 'bucket': 'highereducation-dw-transformed-data',
                 'tables': ['user_agent'],
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_to_staging': {
                 'args': {
@@ -161,7 +170,8 @@ class test_nightly_edu(unittest.TestCase):
                 'bucket': 'highereducation-dw-staging-data',
                 'initial_folders': ['EDUDirectDB', 'tmp'],
                 'date_partition': True,
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             'EDUDirect_related_subject': {
                 'args': {
@@ -174,14 +184,27 @@ class test_nightly_edu(unittest.TestCase):
                 'bucket': 'highereducation-dw-staging-data',
                 'initial_folders': ['EDUDirectDB', 'env'],
                 'date_partition': True,
-                'file_extension': 'parquet'
+                'file_extension': 'parquet',
+                'job_type': ['file_creation']
             },
             # migration to redshift
             'UpdateCrawler': {
                 'args': {
                     '--CRAWLER': 'highereducation-dw-edudirectdb-staging'
                 },
+                'job_type': ['update_db']
             },
+            'Migrate_EDUDirect_to_Redshift': {
+                'args': {
+                    '--ORIGIN': 'stag-platformevents-db-staging.normalized_events_fact_table_stag_current', #database and table to query
+                    '--DESTINATION': 'stag_platform_events_staging_internal.normalized_events_fact_table_stag_current',
+                },
+                'job_type': ['update_db'],
+                'output_db':  'stag_platform_events_staging_internal',
+                'output_table': 'normalized_events_fact_table_stag_current'
+                '
+            },
+            
         }
 
         # initialize logger
