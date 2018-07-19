@@ -19,7 +19,7 @@ import dynamic_frame_util as dfu
 import date_util as du
 
 glueContext = GlueContext(SparkContext.getOrCreate())
-args = getResolvedOptions(sys.argv, ['JOB_NAME', 'ENVIRONMENT', 'TYPE', 'START_DATE', 'END_DATE'])
+args = getResolvedOptions(sys.argv, ['JOB_NAME', 'ENVIRONMENT', 'TYPE', 'START_DATE', 'END_DATE', 'DATABASE'])
 
 JOB_NAME = args['JOB_NAME']
 ENVIRONMENT = args['ENVIRONMENT']
