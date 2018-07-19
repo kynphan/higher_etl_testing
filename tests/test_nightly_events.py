@@ -5,16 +5,18 @@
 from __future__ import print_function
 
 import unittest
-import time
+import datetime
+import logmatic
 import logging
 import boto3
 import json
 
-from utilities import  get_json_file, get_job_object, get_job_state
+from utilities import get_json_file, get_job_object, get_job_state, check_file_s3, get_date_folders, run_jobs
 
 import os
 import sys
-sys.path.append('..')  
+sys.path.append('..')
+
 
 class test_nightly_events(unittest.TestCase):
 
@@ -75,4 +77,27 @@ class test_nightly_events(unittest.TestCase):
                 'date_partition': True,
             },
         }
+
+        # initialize logger
+        self.logger = logging.getLogger()
+
+        handler = logging.StreamHandler()
+        handler.setFormatter(logmatic.JsonFormatter())
+
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+
+    def test_job_list(self):
+        # get logger
+        logger = logging.getLogger("test")
+        self.json_results = run_jobs(self.glue, self.s3, self.job_list, self.json_results, logger)
+
+        with open('results/night_events.json', 'w+') as outfile:
+            json.dump(self.json_results, outfile)
+        self.assertTrue(len(self.json_results) == len(self.job_list))
+
+
+if __name__ == '__main__':
+    print(unittest.main())
+
         
