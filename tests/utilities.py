@@ -171,7 +171,8 @@ def run_jobs(glue, s3, job_list, json_results, logger):
                             # check the files contained in each one of the folders
                             for prefix, folder_status in files_created.items():
                                 if folder_status:
-                                    validated_contents = check_bucket_content(s3, bucket, prefix, file_extension)
+                                    print('prefix:' + prefix)
+                                    validated_contents = check_bucket_content(s3, bucket, prefix, file_extension, job_started)
                                     files_created[prefix] = validated_contents
 
                         elif(len(files) > 0):
@@ -189,39 +190,48 @@ def run_jobs(glue, s3, job_list, json_results, logger):
                 # save results into logger
                 logger.info(job_name, extra=item)
 
-            # wait 20 seconds before try to run jobs again
+            # wait 20 seconds before try to run jobs againzzz
             time.sleep(20)
 
     return json_results
 
 
-def get_bucket_content(bucket_name):
+def get_bucket_content(bucket_name, file_extension=''):
     s3 = boto3.client('s3')
-    return s3.list_objects_v2(Bucket=bucket_name)['Contents']
-    
+    objs = s3.list_objects_v2(Bucket=bucket_name)['Contents']
+    for obj in objs:
+        key = obj['Key']
+        if(file_extension):
+            if not key.endswith(file_extension):
+                print('to remove')
+                print(key)
+                objs.remove(obj)
+
+    return objs
+
 
 def check_bucket_content(s3, bucket_name, folder_prefix='', file_extension='', creation_date=''):
-    objs = get_bucket_content(bucket_name)
+    objs = get_bucket_content(bucket_name, folder_prefix)
+    print(objs)
+    print(folder_prefix)
     objs_validated = {}
     for obj in objs:
         key = obj['Key']
-
         folder_flag = True
         if(folder_prefix):
+            print('folder validation')
+            print(key, folder_prefix, key.startswith(folder_prefix))
             if not key.startswith(folder_prefix):
                 folder_flag = False
 
-        extension_flag = True
-        if(file_extension):
-            if not key.endswith(file_extension):
-                extension_flag = False
-
         date_flag = True
         if(creation_date):
-            if not obj.creation_date > creation_date:
+            print(obj['LastModified'].replace(tzinfo=None) > creation_date.replace(tzinfo=None))
+            if not obj['LastModified'].replace(tzinfo=None) > creation_date.replace(tzinfo=None):
                 date_flag = False
 
-        objs_validated[key] = folder_flag and extension_flag and date_flag
+        objs_validated[key] = folder_flag and date_flag
+        sys.exit(0)
 
     return objs_validated
        
