@@ -36,7 +36,7 @@ class test_nightly_events(unittest.TestCase):
         self.s3 = boto3.resource('s3')
 
         # get json file for this test suite 
-        self.json_results = []
+        self.json_results = {}
 
         # define the jobs list, including initial params
         self.job_list = {
@@ -46,7 +46,8 @@ class test_nightly_events(unittest.TestCase):
                 },
                 'bucket': 'highereducation-dw-transformed-data',
                 'initial_folders': ['PlatformEvents-current'],
-                'tables': ['cap_info_csv']
+                'tables': ['cap_info_csv'],
+                'file_extension': 'parquet'
             },
             'PlatformEvents_to_parquet': {
                 'args': {
@@ -56,6 +57,7 @@ class test_nightly_events(unittest.TestCase):
                 'initial_folders': ['PlatformEvents'],
                 'tables': ['platform_events_public_normalized_events'],
                 'date_partition': True,
+                'file_extension': 'parquet'
             },
             'PlatformEvents_to_staging': {
                 'args': {
@@ -64,8 +66,9 @@ class test_nightly_events(unittest.TestCase):
                 },
                 'bucket': 'highereducation-dw-staging-data',
                 'initial_folders': ['PlatformEvents', 'tmp'],
-                'tables': ['fact_table_%s_current_v1_env'],
+                'tables': ['fact_table_%s_current_v1_dev'],
                 'date_partition': True,
+                'file_extension': 'parquet'
             },
             'PlatformEvents_prices': {
                 'args': {
