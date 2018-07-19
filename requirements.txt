@@ -3,3 +3,5 @@ boto3==1.7.55
 logmatic-python==0.1.7
 pep8==1.7.1
 pylint==1.9.2
+psycopg2==2.7.5
+

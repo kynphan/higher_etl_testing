@@ -8,6 +8,7 @@ import time
 
 import json
 import boto3
+import psycopg2
 import logging, logging.config
 
 
@@ -15,6 +16,12 @@ def load_log_config():
     root = logging.getLogger()
     root.setLevel(logging.INFO)
     return root
+
+
+def get_redshift_connection():
+    conn_string = "dbname='redshiftdev' port='5439' user='marvel' password='Marvel0us' host='jdbc:redshift://redshift-dev.clgxnf5eucuy.us-east-1.redshift.amazonaws.com'"
+    conn = psycopg2.connect(conn_string)
+    return conn
 
 
 def get_json_file(test_name, json_items):
