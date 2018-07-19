@@ -112,7 +112,11 @@ def get_job_object(glue_service, job_name, args={}):
 
 
 def launch_crawler(glue_service, crawler_name):
-    glue_service.start_crawler(Name=crawler_name)
+    return glue_service.start_crawler(Name=crawler_name)
+
+
+def get_crawler_state(glue_service, crawler_name):
+    return glue_service.get_crawler(Name=crawler_name)
 
 
 # https://github.com/aws-samples/aws-etl-orchestrator/blob/master/lambda/gluerunner/gluerunner.py

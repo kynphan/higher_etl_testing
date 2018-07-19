@@ -176,6 +176,12 @@ class test_nightly_edu(unittest.TestCase):
                 'date_partition': True,
                 'file_extension': 'parquet'
             },
+            # migration to redshift
+            'UpdateCrawler': {
+                'args': {
+                    '--CRAWLER': 'highereducation-dw-edudirectdb-staging'
+                },
+            },
         }
 
         # initialize logger
