@@ -79,7 +79,7 @@ class test_nightly_events(unittest.TestCase):
                 'initial_folders': ['PlatformEvents', 'dev'],
                 'tables': [
                     'normalized_events_fact_table_dev_current'
-                ],
+                ],  
                 'date_partition': True,
                 'file_extension': 'parquet'
             },
